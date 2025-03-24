@@ -17,10 +17,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from api.views import CategoryAPIView  # import CategoryAPIView
+from api.views import UserAPIViewset, ProjectAPIViewset  # import CategoryAPIView
+from rest_framework import routers
+#from rest_framework_simplejwt import TokenObtainPairView, TokenRefreshView
+
+router = routers.SimpleRouter()
+router.register('user', UserAPIViewset, basename='user')
+router.register('project', ProjectAPIViewset, basename='project')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/users', CategoryAPIView.as_view(), name='users'),
+    #path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    #path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/', include(router.urls)),
 ]
+
+
