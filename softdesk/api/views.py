@@ -16,6 +16,7 @@ from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from .permissions import IsAuthorOrContributor, IsProjectContributor
 
 
 class UserAPIViewset(ModelViewSet):
@@ -37,12 +38,14 @@ class ProjectAPIViewset(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAuthorOrContributor]
 
     def perform_create(self, serializer):
         # Associe automatiquement l'utilisateur connecté comme auteur
         serializer.save(author=self.request.user)
-        
+            
+    def get_queryset(self):
+        return Project.objects.filter(author=self.request.user)     
 
 
 class WhoAmIView(APIView):

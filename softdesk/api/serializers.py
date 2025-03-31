@@ -13,6 +13,15 @@ class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'password', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared']
+        extra_kwargs = {
+            'password': {'write_only': True}  # Ne montre jamais le mot de passe en clair
+        }
+
+    def create(self, validated_data):
+        # Hash du mot de passe avant création
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+
 
 
 class RegisterSerializer(ModelSerializer):
