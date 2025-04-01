@@ -1,4 +1,4 @@
-from django.db import models
+import uuidfrom django.db import models
 
 # Create your models here.
 
@@ -19,11 +19,15 @@ class Project(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='authored_projects', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f'{self.name}, by {self.author.username}'
 
 class Contributor(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='contributions', on_delete=models.CASCADE)
     project = models.ForeignKey(Project, related_name='contributors', on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f'{self.user.username} is a contributor to {self.project.name}'
 
 class Issue(models.Model):
     PRIORITY_CHOICES = [
@@ -54,9 +58,22 @@ class Issue(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='To Do')
     created_time = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f'{self.title} - {self.project.name} ({self.status})'
+
+
 
 class Comment(models.Model):
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
     description = models.TextField()
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='authored_comments', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Comment by {self.author.username} on {self.issue.title}'
