@@ -17,24 +17,17 @@ from api.views import (
     ContributorViewSet,
     IssueViewSet,
     CommentViewSet,
-    #RegisterViewSet,
-    
+    # RegisterViewSet,
+
 )
-
-
-
-
-
-
-
 
 router = routers.SimpleRouter()
 router.register(r'users', UserAPIViewset, basename='user')
 
 router.register(r'projects', ProjectAPIViewset, basename='project')
-router.register('contributor', ContributorAPIViewset, basename='contributor')
-router.register('issue', IssueAPIViewset, basename='issue')
-router.register('comment', CommentAPIViewset, basename='comment')
+#router.register('contributor', ContributorAPIViewset, basename='contributor')
+router.register(r'issues', IssueAPIViewset, basename='issue')
+router.register(r'comments', CommentAPIViewset, basename='comment')
 #router.register('register', RegisterView, basename='register')
 
 

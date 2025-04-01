@@ -107,12 +107,24 @@ class ContributorAPIViewset(ModelViewSet):
 
 
 class IssueAPIViewset(ModelViewSet):
-
     serializer_class = IssueSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Seules les issues des projets où l'utilisateur est contributeur
+        return Issue.objects.filter(
+            project__contributors__user=self.request.user
+        ).distinct()
 
-        return Issue.objects.all()
+    def perform_create(self, serializer):
+        # Vérification finale avant sauvegarde
+        project = serializer.validated_data['project']
+        if not project.contributors.filter(user=self.request.user).exists():
+            raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
+        
+        # Assignation automatique de l'auteur
+        serializer.save(author=self.request.user)
 
 
 class CommentAPIViewset(ModelViewSet):

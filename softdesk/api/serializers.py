@@ -66,19 +66,48 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class ContributorSerializer(ModelSerializer):
- 
+
     class Meta:
         model = Contributor
         fields = ['id', 'user', 'project']
 
-class IssueSerializer(ModelSerializer):
- 
+
+class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'project', 'author', 'assignee', 'priority', 'tag', 'status', 'created_time']
+        fields = [
+            'id', 'title', 'description', 'project', 
+            'author', 'assignee', 'priority', 'tag', 
+            'status', 'created_time'
+        ]
+        read_only_fields = ['author', 'created_time']
+
+    def validate(self, data):
+        user = self.context['request'].user
+        project = data.get('project')
+        assignee = data.get('assignee')
+
+        # Vérification que l'utilisateur est contributeur du projet
+        if not Contributor.objects.filter(project=project, user=user).exists():
+            raise serializers.ValidationError(
+                {"project": "Vous n'êtes pas contributeur de ce projet"}
+            )
+
+        # Vérification de l'assigné s'il est spécifié
+        if assignee and not Contributor.objects.filter(project=project, user=assignee).exists():
+            raise serializers.ValidationError(
+                {"assignee": "L'assigné doit être un contributeur du projet"}
+            )
+
+        # Définition du statut par défaut
+        if not data.get('status'):
+            data['status'] = 'To Do'
+
+        return data
 
 class CommentSerializer(ModelSerializer):
- 
+
     class Meta:
         model = Comment
         fields = ['id', 'description', 'issue', 'author', 'created_time']
+
