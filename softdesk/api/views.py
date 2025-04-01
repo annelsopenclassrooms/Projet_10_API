@@ -77,9 +77,11 @@ class ProjectAPIViewset(ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAuthorOrContributor]
 
     def perform_create(self, serializer):
-        # Associe automatiquement l'utilisateur connecté comme auteur
-        serializer.save(author=self.request.user)
-            
+        # Save the project with the current user as the author
+        project = serializer.save(author=self.request.user)
+        # Add the author as a contributor
+        Contributor.objects.create(project=project, user=self.request.user)
+
     def get_queryset(self):
         return Project.objects.filter(author=self.request.user)     
 
@@ -102,8 +104,6 @@ class ContributorAPIViewset(ModelViewSet):
     def get_queryset(self):
 
         return Contributor.objects.all()
-    
-
 
 
 class IssueAPIViewset(ModelViewSet):
@@ -113,6 +113,7 @@ class IssueAPIViewset(ModelViewSet):
     def get_queryset(self):
 
         return Issue.objects.all()
+
 
 class CommentAPIViewset(ModelViewSet):
 

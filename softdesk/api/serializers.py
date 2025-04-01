@@ -20,7 +20,8 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ['id', 'username', 'password', 'password_confirm', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared']
         extra_kwargs = {
-            'password': {'write_only': True}  # Ne montre jamais le mot de passe en clair
+            'password': {'write_only': True},  # Ne montre jamais le mot de passe en clair
+            'id': {'read_only': False}  # Permet d'écrire l'id (re creation user apres suppression lors de la demo)
         }
 
     def validate(self, data):

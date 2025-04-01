@@ -23,12 +23,17 @@ class Project(models.Model):
     def __str__(self):
         return f'{self.name}, by {self.author.username}'
 
+
 class Contributor(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='contributions', on_delete=models.CASCADE)
     project = models.ForeignKey(Project, related_name='contributors', on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('user', 'project')  # Prevents duplicate entries
+
     def __str__(self):
         return f'{self.user.username} is a contributor to {self.project.name}'
+
 
 class Issue(models.Model):
     PRIORITY_CHOICES = [
@@ -61,7 +66,6 @@ class Issue(models.Model):
 
     def __str__(self):
         return f'{self.title} - {self.project.name} ({self.status})'
-
 
 
 class Comment(models.Model):
