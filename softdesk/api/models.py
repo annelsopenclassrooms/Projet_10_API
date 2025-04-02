@@ -73,7 +73,8 @@ class Comment(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
-        unique=True
+        unique=True,
+        verbose_name='UUID'  # Ajout explicite du nom
     )
     description = models.TextField()
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)

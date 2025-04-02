@@ -105,9 +105,21 @@ class IssueSerializer(serializers.ModelSerializer):
 
         return data
 
+
 class CommentSerializer(ModelSerializer):
 
     class Meta:
         model = Comment
         fields = ['id', 'description', 'issue', 'author', 'created_time']
+        read_only_fields = ['id', 'author', 'created_time']
+
+    def validate(self, data):
+        user = self.context['request'].user
+        issue = data.get('issue')
+        # Vérification que l'utilisateur est contributeur du projet
+        if not Contributor.objects.filter(project=issue.project, user=user).exists():
+            raise serializers.ValidationError(
+                {"issue": "Vous n'êtes pas contributeur de ce projet"}
+            )
+        return data
 
