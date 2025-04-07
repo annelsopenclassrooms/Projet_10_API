@@ -3,13 +3,13 @@ from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
 
 
-class ContributorInline(admin.TabularInline):  # Affiche les contributeurs sous forme de tableau
+class ContributorInline(admin.TabularInline):
     model = Contributor
-    extra = 1  # Nombre de lignes vides pour ajouter des contributeurs
+    extra = 1
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    inlines = [ContributorInline]  # Ajoute les contributeurs directement sur la page d'édition d'un projet
+    inlines = [ContributorInline]
 
 
 admin.site.register(User)

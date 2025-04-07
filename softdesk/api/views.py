@@ -28,17 +28,16 @@ class UserAPIViewset(ModelViewSet):
         user = self.request.user
         if user.is_superuser:
             return User.objects.all()
-        # Retourne uniquement l'utilisateur connecté pour les non-admins
+        # Returns only the logged-in user for non-admins
         return User.objects.filter(id=user.id)
 
     def list(self, request, *args, **kwargs):
-        # Seuls les admins peuvent voir la liste complète
+        # Only admins can see the full list
         if not request.user.is_superuser:
             raise PermissionDenied("Seuls les administrateurs peuvent voir la liste des utilisateurs.")
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        # Création classique (à adapter selon vos besoins de permissions)
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -62,7 +61,7 @@ class ProjectAPIViewset(ModelViewSet):
 
 
 class WhoAmIView(APIView):
-    permission_classes = [IsAuthenticated]  # Nécessite un token valide
+    permission_classes = [IsAuthenticated]  # Requires a valid token
 
     def get(self, request):
         return Response({
@@ -86,18 +85,18 @@ class IssueAPIViewset(ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Seules les issues des projets où l'utilisateur est contributeur
+        # Only the issues from projects where the user is a contributor
         return Issue.objects.filter(
             project__contributors__user=self.request.user
         ).distinct()
 
     def perform_create(self, serializer):
-        # Vérification finale avant sauvegarde
+        # Check before saving
         project = serializer.validated_data['project']
         if not project.contributors.filter(user=self.request.user).exists():
             raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
 
-        # Assignation automatique de l'auteur
+        # Automatic assignment of the author
         serializer.save(author=self.request.user)
 
 
@@ -106,16 +105,16 @@ class CommentAPIViewset(ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        # Seules les commentaires des issues où l'utilisateur est contributeur
+        # Only the comments from issues where the user is a contributor
         return Comment.objects.filter(
             issue__project__contributors__user=self.request.user
         ).distinct()
 
     def perform_create(self, serializer):
-        # Vérification finale avant sauvegarde
+        # Check before saving
         issue = serializer.validated_data['issue']
         if not issue.project.contributors.filter(user=self.request.user).exists():
             raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
 
-        # Assignation automatique de l'auteur
+        # Automatic assignment of the author
         serializer.save(author=self.request.user)

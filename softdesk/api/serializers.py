@@ -7,14 +7,14 @@ from django.utils.timezone import now
 
 
 class UserSerializer(ModelSerializer):
-    password_confirm = CharField(write_only=True)  # Ajout du champ pour la confirmation du mot de passe
+    password_confirm = CharField(write_only=True)  # Added password confirmation field
 
     class Meta:
         model = User
         fields = ['id', 'username', 'password', 'password_confirm', 'date_of_birth', 'can_be_contacted',
                   'can_data_be_shared']
         extra_kwargs = {
-            'password': {'write_only': True},  # Ne montre jamais le mot de passe en clair
+            'password': {'write_only': True},  # Hide password field in the API
         }
 
     def validate(self, data):
@@ -26,17 +26,15 @@ class UserSerializer(ModelSerializer):
         password = data.get('password')
         password_confirm = data.get('password_confirm')
 
-        # Vérification de la date de naissance uniquement à la création
         if is_creation and not date_of_birth:
             raise ValidationError(
                     {"date_of_birth": "La date de naissance est obligatoire lors de la création du compte."})
 
-        # Vérification du mot de passe et de sa confirmation
         if password and password != password_confirm:
             raise ValidationError({"password_confirm": "Les mots de passe ne correspondent pas."})
 
-        # Vérification de l'âge pour le partage des données
-        if date_of_birth:  # Vérifier l'âge seulement si une date est fournie
+        # Check if the user is under 15 years old
+        if date_of_birth:  # Check if date_of_birth is provided
             age = (now().date() - date_of_birth).days // 365
             if can_data_be_shared and age < 15:
                 raise ValidationError({"can_data_be_shared": "Vous devez avoir 15 ans pour partager vos données."})
@@ -44,8 +42,8 @@ class UserSerializer(ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data.pop('password_confirm', None)  # Retirer password_confirm avant la création
-        validated_data['password'] = make_password(validated_data['password'])  # Hash du mot de passe
+        validated_data.pop('password_confirm', None)  # Remove password_confirm before saving
+        validated_data['password'] = make_password(validated_data['password'])  # Password hashing
         return super().create(validated_data)
 
 
@@ -54,7 +52,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['id', 'name', 'description', 'type', 'author', 'created_time']
         extra_kwargs = {
-            'author': {'read_only': True},  # Empêche la modification via l'API
+            'author': {'read_only': True},  # Prevent modification via the API
             'created_time': {'read_only': True},
         }
 
@@ -81,19 +79,19 @@ class IssueSerializer(serializers.ModelSerializer):
         project = data.get('project')
         assignee = data.get('assignee')
 
-        # Vérification que l'utilisateur est contributeur du projet
+        # Check that the user is a contributor to the project
         if not Contributor.objects.filter(project=project, user=user).exists():
             raise serializers.ValidationError(
                 {"project": "Vous n'êtes pas contributeur de ce projet"}
             )
 
-        # Vérification de l'assigné s'il est spécifié
+        # Verify the assignee if provided
         if assignee and not Contributor.objects.filter(project=project, user=assignee).exists():
             raise serializers.ValidationError(
                 {"assignee": "L'assigné doit être un contributeur du projet"}
             )
 
-        # Définition du statut par défaut
+        # Set default status
         if not data.get('status'):
             data['status'] = 'To Do'
 
@@ -110,7 +108,7 @@ class CommentSerializer(ModelSerializer):
     def validate(self, data):
         user = self.context['request'].user
         issue = data.get('issue')
-        # Vérification que l'utilisateur est contributeur du projet
+        # Check that the user is a contributor to the project
         if not Contributor.objects.filter(project=issue.project, user=user).exists():
             raise serializers.ValidationError(
                 {"issue": "Vous n'êtes pas contributeur de ce projet"}
