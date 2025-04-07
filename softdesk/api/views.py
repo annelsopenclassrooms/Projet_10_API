@@ -1,27 +1,7 @@
-from django.shortcuts import render
-
 # Create your views here.
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.response import Response
+
 from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
-from api.serializers import UserSerializer, ProjectSerializer, ContributorSerializer, IssueSerializer, CommentSerializer
-from rest_framework.generics import CreateAPIView
-from rest_framework.views import APIView
-
-
-from rest_framework import generics, permissions
-
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
-
-from .permissions import IsAuthorOrContributor
-
-
-
-
-from rest_framework import viewsets, permissions
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .serializers import (
     UserSerializer,
@@ -29,19 +9,14 @@ from .serializers import (
     ContributorSerializer,
     IssueSerializer,
     CommentSerializer,
-
 )
-from .permissions import IsAuthorOrContributor, IsProjectContributor
-from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
-
-
-
-
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.decorators import action
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework import permissions, status
+from rest_framework.permissions import IsAuthenticated, IsAuthorOrContributor
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.exceptions import PermissionDenied
 
 
 class UserAPIViewset(ModelViewSet):
@@ -83,7 +58,7 @@ class ProjectAPIViewset(ModelViewSet):
         Contributor.objects.create(project=project, user=self.request.user)
 
     def get_queryset(self):
-        return Project.objects.filter(author=self.request.user)     
+        return Project.objects.filter(author=self.request.user)
 
 
 class WhoAmIView(APIView):
@@ -130,7 +105,7 @@ class CommentAPIViewset(ModelViewSet):
 
     serializer_class = CommentSerializer
 
-    def get_queryset(self): 
+    def get_queryset(self):
         # Seules les commentaires des issues où l'utilisateur est contributeur
         return Comment.objects.filter(
             issue__project__contributors__user=self.request.user
@@ -144,4 +119,3 @@ class CommentAPIViewset(ModelViewSet):
 
         # Assignation automatique de l'auteur
         serializer.save(author=self.request.user)
-
