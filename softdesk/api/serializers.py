@@ -1,16 +1,9 @@
 from rest_framework.serializers import ModelSerializer, ValidationError, CharField
- 
 from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
-
 from django.contrib.auth.hashers import make_password
-
 from rest_framework import serializers
-from .models import Project
-
-from datetime import timedelta
 from django.utils.timezone import now
-from rest_framework import status
 
 
 class UserSerializer(ModelSerializer):
@@ -18,10 +11,10 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'password_confirm', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared']
+        fields = ['id', 'username', 'password', 'password_confirm', 'date_of_birth', 'can_be_contacted',
+                  'can_data_be_shared']
         extra_kwargs = {
             'password': {'write_only': True},  # Ne montre jamais le mot de passe en clair
-            #'id': {'read_only': False}  # Permet d'écrire l'id (re creation user apres suppression lors de la demo)
         }
 
     def validate(self, data):
@@ -35,7 +28,8 @@ class UserSerializer(ModelSerializer):
 
         # Vérification de la date de naissance uniquement à la création
         if is_creation and not date_of_birth:
-            raise ValidationError({"date_of_birth": "La date de naissance est obligatoire lors de la création du compte."})
+            raise ValidationError(
+                    {"date_of_birth": "La date de naissance est obligatoire lors de la création du compte."})
 
         # Vérification du mot de passe et de sa confirmation
         if password and password != password_confirm:
@@ -76,8 +70,8 @@ class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Issue
         fields = [
-            'id', 'title', 'description', 'project', 
-            'author', 'assignee', 'priority', 'tag', 
+            'id', 'title', 'description', 'project',
+            'author', 'assignee', 'priority', 'tag',
             'status', 'created_time'
         ]
         read_only_fields = ['author', 'created_time']
@@ -122,4 +116,3 @@ class CommentSerializer(ModelSerializer):
                 {"issue": "Vous n'êtes pas contributeur de ce projet"}
             )
         return data
-

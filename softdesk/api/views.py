@@ -15,7 +15,7 @@ from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .permissions import IsAuthorOrContributor, IsProjectContributor
+from .permissions import IsAuthorOrContributor
 
 
 
@@ -96,7 +96,6 @@ class WhoAmIView(APIView):
         })
 
 
-#a supprimer
 class ContributorAPIViewset(ModelViewSet):
 
     serializer_class = ContributorSerializer
@@ -122,7 +121,7 @@ class IssueAPIViewset(ModelViewSet):
         project = serializer.validated_data['project']
         if not project.contributors.filter(user=self.request.user).exists():
             raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
-        
+
         # Assignation automatique de l'auteur
         serializer.save(author=self.request.user)
 
@@ -136,6 +135,7 @@ class CommentAPIViewset(ModelViewSet):
         return Comment.objects.filter(
             issue__project__contributors__user=self.request.user
         ).distinct()
+
     def perform_create(self, serializer):
         # Vérification finale avant sauvegarde
         issue = serializer.validated_data['issue']
@@ -145,54 +145,3 @@ class CommentAPIViewset(ModelViewSet):
         # Assignation automatique de l'auteur
         serializer.save(author=self.request.user)
 
-
-# class ContributorViewSet(viewsets.ModelViewSet):
-#     serializer_class = ContributorSerializer
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [permissions.IsAuthenticated, IsProjectContributor]
-
-#     def get_queryset(self):
-#         return Contributor.objects.filter(project_id=self.kwargs['project_id'])
-
-#     def perform_create(self, serializer):
-#         serializer.save(project_id=self.kwargs['project_id'])
-
-
-# class IssueViewSet(viewsets.ModelViewSet):
-#     serializer_class = IssueSerializer
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [permissions.IsAuthenticated, IsProjectContributor]
-
-#     def get_queryset(self):
-#         return Issue.objects.filter(project_id=self.kwargs['project_id'])
-
-#     def perform_create(self, serializer):
-#         serializer.save(
-#             author=self.request.user,
-#             project_id=self.kwargs['project_id']
-#         )
-
-
-# class CommentViewSet(viewsets.ModelViewSet):
-#     serializer_class = CommentSerializer
-#     authentication_classes = [JWTAuthentication]
-#     permission_classes = [permissions.IsAuthenticated, IsProjectContributor]
-
-#     def get_queryset(self):
-#         return Comment.objects.filter(issue_id=self.kwargs['issue_id'])
-
-#     def perform_create(self, serializer):
-#         serializer.save(
-#             author=self.request.user,
-#             issue_id=self.kwargs['issue_id']
-#        )
-
-# class RegisterViewSet(viewsets.GenericViewSet):
-#     serializer_class = RegisterSerializer
-#     queryset = User.objects.all()
-
-#     def create(self, request):
-#         serializer = self.get_serializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=201)
