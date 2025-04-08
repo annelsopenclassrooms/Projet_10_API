@@ -2,7 +2,8 @@
 
 from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
-from api.permissions import IsAuthorOrContributor
+from api.permissions import IsAuthorOrContributor, IsAuthor
+from django.db.models import Q
 
 from .serializers import (
     UserSerializer,
@@ -67,25 +68,32 @@ class ProjectAPIViewset(ModelViewSet):
         return Project.objects.filter(author=self.request.user)
 
 
-class WhoAmIView(APIView):
-    permission_classes = [IsAuthenticated]  # Requires a valid token
-
-    def get(self, request):
-        return Response({
-            "user_id": request.user.id,
-            "username": request.user.username,
-        })
-
-
 class ContributorAPIViewset(ModelViewSet):
-
+    queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Get contributors where the user is either the contributor or the project author
+        return Contributor.objects.filter(
+            Q(user=self.request.user) | Q(project__author=self.request.user)
+        )
 
-        return Contributor.objects.all()
+    def perform_create(self, serializer):
+        project = serializer.validated_data['project']
+        # Check if the requesting user is the author of the project
+        if project.author != self.request.user:
+            raise PermissionDenied("Seul l'auteur du projet peut ajouter un contributeur.")
+        serializer.save()
 
-
+    def destroy(self, request, *args, **kwargs):
+        contributor = self.get_object()
+        # Check if the requesting user is the author of the project
+        if contributor.project.author != request.user:
+            raise PermissionDenied("Seul l'auteur du projet peut supprimer un contributeur.")
+        return super().destroy(request, *args, **kwargs)
+        
 class IssueAPIViewset(ModelViewSet):
     serializer_class = IssueSerializer
     authentication_classes = [JWTAuthentication]
@@ -125,3 +133,12 @@ class CommentAPIViewset(ModelViewSet):
 
         # Automatic assignment of the author
         serializer.save(author=self.request.user)
+
+class WhoAmIView(APIView):
+    permission_classes = [IsAuthenticated]  # Requires a valid token
+
+    def get(self, request):
+        return Response({
+            "user_id": request.user.id,
+            "username": request.user.username,
+        })

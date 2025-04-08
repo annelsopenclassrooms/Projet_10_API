@@ -57,7 +57,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         }
 
 
-class ContributorSerializer(ModelSerializer):
+class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
