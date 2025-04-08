@@ -14,7 +14,7 @@ class Project(models.Model):
         ('Android', 'Android'),
     ]
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='authored_projects', on_delete=models.CASCADE)

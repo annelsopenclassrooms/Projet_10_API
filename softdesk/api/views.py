@@ -2,6 +2,7 @@
 
 from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
+from api.permissions import IsAuthorOrContributor
 
 from .serializers import (
     UserSerializer,
@@ -10,11 +11,14 @@ from .serializers import (
     IssueSerializer,
     CommentSerializer,
 )
+
+from django.db import IntegrityError
+from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions, status
-from rest_framework.permissions import IsAuthenticated, IsAuthorOrContributor
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.exceptions import PermissionDenied
 
@@ -51,10 +55,13 @@ class ProjectAPIViewset(ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAuthorOrContributor]
 
     def perform_create(self, serializer):
-        # Save the project with the current user as the author
-        project = serializer.save(author=self.request.user)
-        # Add the author as a contributor
-        Contributor.objects.create(project=project, user=self.request.user)
+        try:
+            # Save the project with the current user as the author
+            project = serializer.save(author=self.request.user)
+            # Add the author as a contributor
+            Contributor.objects.create(project=project, user=self.request.user)
+        except IntegrityError:
+            raise ValidationError("A project with this name already exists.")
 
     def get_queryset(self):
         return Project.objects.filter(author=self.request.user)
