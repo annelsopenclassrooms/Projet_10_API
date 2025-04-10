@@ -65,7 +65,9 @@ class ProjectAPIViewset(ModelViewSet):
             raise ValidationError("A project with this name already exists.")
 
     def get_queryset(self):
-        return Project.objects.filter(author=self.request.user)
+        return Project.objects.filter(
+            Q(author=self.request.user) | Q(contributors__user=self.request.user)
+        ).distinct()
 
 
 class ContributorAPIViewset(ModelViewSet):
