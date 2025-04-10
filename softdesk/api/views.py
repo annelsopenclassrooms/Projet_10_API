@@ -2,8 +2,9 @@
 
 from authentication.models import User
 from api.models import Project, Contributor, Issue, Comment
-from api.permissions import IsAuthorOrContributor, IsAuthor
+from api.permissions import IsAuthorOrContributor, IsIssueAuthorOrReadOnly, IsProjectAuthorOrReadOnly, IsCommentAuthorOrReadOnly
 from django.db.models import Q
+
 
 from .serializers import (
     UserSerializer,
@@ -53,13 +54,11 @@ class ProjectAPIViewset(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated, IsAuthorOrContributor]
+    permission_classes = [permissions.IsAuthenticated, IsProjectAuthorOrReadOnly]
 
     def perform_create(self, serializer):
         try:
-            # Save the project with the current user as the author
             project = serializer.save(author=self.request.user)
-            # Add the author as a contributor
             Contributor.objects.create(project=project, user=self.request.user)
         except IntegrityError:
             raise ValidationError("A project with this name already exists.")
@@ -95,46 +94,42 @@ class ContributorAPIViewset(ModelViewSet):
         if contributor.project.author != request.user:
             raise PermissionDenied("Seul l'auteur du projet peut supprimer un contributeur.")
         return super().destroy(request, *args, **kwargs)
-        
+
+
 class IssueAPIViewset(ModelViewSet):
     serializer_class = IssueSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsIssueAuthorOrReadOnly]
 
     def get_queryset(self):
-        # Only the issues from projects where the user is a contributor
         return Issue.objects.filter(
             project__contributors__user=self.request.user
         ).distinct()
 
     def perform_create(self, serializer):
-        # Check before saving
         project = serializer.validated_data['project']
         if not project.contributors.filter(user=self.request.user).exists():
             raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
 
-        # Automatic assignment of the author
         serializer.save(author=self.request.user)
 
 
 class CommentAPIViewset(ModelViewSet):
-
     serializer_class = CommentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated, IsCommentAuthorOrReadOnly]
 
     def get_queryset(self):
-        # Only the comments from issues where the user is a contributor
         return Comment.objects.filter(
             issue__project__contributors__user=self.request.user
         ).distinct()
 
     def perform_create(self, serializer):
-        # Check before saving
         issue = serializer.validated_data['issue']
         if not issue.project.contributors.filter(user=self.request.user).exists():
             raise PermissionDenied("Vous n'êtes pas contributeur de ce projet")
-
-        # Automatic assignment of the author
         serializer.save(author=self.request.user)
+
 
 class WhoAmIView(APIView):
     permission_classes = [IsAuthenticated]  # Requires a valid token
